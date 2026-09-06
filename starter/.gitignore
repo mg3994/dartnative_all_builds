@@ -46,7 +46,7 @@ Desktop.ini
 .env
 .env.*
 !.env.example
-.dnkeys
+# .dnkeys #modified by mg3994 => putthem in repo env vars
 !.dnkeys.example
 *.pem
 *.p12

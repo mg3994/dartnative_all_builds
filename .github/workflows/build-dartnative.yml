@@ -36,7 +36,12 @@ jobs:
 
           for path in "${candidates[@]}"; do
             if [[ -f "$path/pubspec.yaml" && -d "$path/android" ]]; then
-              targets+=("$path")
+              name="$(sed -nE 's/^name:[[:space:]]*["'"']?([^"'"']+)["'"']?[[:space:]]*$/\1/p' "$path/pubspec.yaml" | head -n 1)"
+              if [[ -z "$name" ]]; then
+                echo "Could not read pubspec name from $path/pubspec.yaml" >&2
+                exit 1
+              fi
+              targets+=("$(jq -nc --arg target "$path" --arg name "$name" '{target: $target, name: $name}')")
             fi
           done
 
@@ -45,16 +50,16 @@ jobs:
             exit 1
           fi
 
-          printf 'targets=%s\n' "$(printf '%s\n' "${targets[@]}" | jq -Rsc 'split("\n") | map(select(length > 0))')" >> "$GITHUB_OUTPUT"
+          printf 'targets=%s\n' "$(printf '%s\n' "${targets[@]}" | jq -sc '.')" >> "$GITHUB_OUTPUT"
 
   build:
-    name: Build ${{ matrix.target }}
+    name: Build ${{ matrix.app.name }}
     needs: discover
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
-        target: ${{ fromJSON(needs.discover.outputs.targets) }}
+        app: ${{ fromJSON(needs.discover.outputs.targets) }}
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
@@ -81,20 +86,23 @@ jobs:
       - name: Verify DartNative CLI
         run: dn --version
 
+      - name: Precache DartNative SDK artifacts
+        run: dn precache --force --universal
+
       - name: Resolve dependencies
-        working-directory: ${{ matrix.target }}
+        working-directory: ${{ matrix.app.target }}
         run: dn pub get
 
       - name: Build release APK
-        working-directory: ${{ matrix.target }}
+        working-directory: ${{ matrix.app.target }}
         shell: bash
         run: dn build apk --release --dart-define=DART_NATIVE_LICENSE_TOKEN="$DART_NATIVE_LICENSE_TOKEN"
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: apk-${{ strategy.job-index }}
-          path: ${{ matrix.target }}/build/**/outputs/**/*.apk
+          name: apk-${{ matrix.app.name }}
+          path: ${{ matrix.app.target }}/build/**/outputs/**/*.apk
           if-no-files-found: error
 
   release:
