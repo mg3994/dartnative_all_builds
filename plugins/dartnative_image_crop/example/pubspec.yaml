@@ -23,6 +23,4 @@ dartnative_splash:
   android: true
 
 dartnative:
-  uses-material-design: true
-
-  # TODO add missing  CupertinoIcons or Material related assets
+  uses-material-design: false
