@@ -1,18 +1,18 @@
 // GENERATED FILE — DO NOT EDIT BY HAND.
-// Regenerate with:
-//   dn pub get
 //
-// This file is re-generated whenever the set of DartNative plugin dependencies
-// in pubspec.yaml changes. It is the single entry point an app needs:
+// Regenerated automatically on `dn pub get` / `dn create` whenever the set of
+// DartNative plugins changes. `registerAll()` selects the platform bindings
+// AND loads every plugin's FFI symbols, so `main()` needs only:
 //
 //   void main() {
-//     DartNativePluginRegistrant.registerAll();  // platform bindings + plugins
+//     DartNativePluginRegistrant.registerAll();
 //     runApp(const MyApp());
 //   }
 //
-// Plugins found in notifications_example:
-//   • dartnative_ios (platform bindings)
-//   • dartnative_android (platform bindings)
+// To hand-own this file, delete the header line above; the CLI then stops
+// overwriting it.
+//
+// Plugins loaded:
 //   • dartnative_notifications
 
 import 'dart:io' show Platform;
@@ -23,17 +23,49 @@ import 'package:dartnative_android/dartnative_android.dart';
 import 'package:dartnative_notifications/dartnative_notifications.dart';
 
 abstract final class DartNativePluginRegistrant {
-  /// Register the platform bindings (iOS or Android) AND load FFI symbols for
-  /// every DartNative plugin linked into this app.
-  ///
-  /// Call once at the top of `main()`, before [runApp]. Each plugin guards on
-  /// its supported platform(s), so it's safe to call on any platform.
+  /// Registers the platform bindings and loads every DartNative plugin's
+  /// FFI symbols. Call once as the first line of `main()`, before `runApp`.
   static void registerAll() {
+    const dnLicenseToken = String.fromEnvironment('DART_NATIVE_LICENSE_TOKEN');
+    if (dnLicenseToken.isNotEmpty) {
+      DartNativeLicense.instance.provideToken(dnLicenseToken);
+    }
+    const dnLicenseKey = String.fromEnvironment('DN_LICENSE_KEY');
+    if (dnLicenseKey.isNotEmpty) {
+      DartNativeLicense.instance.provideLicenseKey(dnLicenseKey);
+    }
+    const dnTrialEnded = bool.fromEnvironment('DN_TRIAL_ENDED');
+    if (dnTrialEnded) {
+      DartNativeLicense.instance.noteTrialEnded();
+    }
+    DartNativeLicense.instance.reportPluginUsage(const <String>[
+      'dartnative_notifications',
+      'dartnative_skia',
+      'dartnative_splash',
+    ]);
     registerNativeBindings(
       Platform.isAndroid
           ? AndroidNativeBindings.instance
           : IOSNativeBindings.instance,
     );
-    NotificationsFFIBindings.loadSymbols();
+    _load('dartnative_notifications', () {
+      NotificationsFFIBindings.loadSymbols();
+    });
+  }
+
+  /// Loads one plugin's FFI symbols, turning a missing native side into a
+  /// message that names the fix.
+  static void _load(String plugin, void Function() load) {
+    try {
+      load();
+    } catch (e) {
+      dnLog(
+        '[dartnative] $plugin: its native symbols are not in this build.\n'
+        '  iOS:     run `pod install` in ios/, then rebuild.\n'
+        '  Android: rebuild so the plugin library is packaged.\n'
+        '  The app keeps going; this plugin will not work until then.\n'
+        '  $e',
+      );
+    }
   }
 }

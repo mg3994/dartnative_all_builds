@@ -8,7 +8,7 @@
 //   • `image_editor` (`ImageEditor.editImage`, `ClipOption`, `FlipOption`,
 //     `RotateOption`)                      →  [DartNativeImageCrop.cropImage].
 //   • `HitTestButton`                      →  GestureDetector(opaque).
-//   • `Image.asset(icRotateLeft, …)`       →  `Icon(MaterialSymbolsRounded.X)`.
+//   • `Image.asset(icRotateLeft, …)`       →  `Icon(CupertinoIcons.X)`.
 //   • app theme constants                  →  inline values.
 //   • `S().cancel` / `S().done`            →  string literals.
 //   • File-from-constructor                →  a small "Load Image" landing
@@ -340,7 +340,7 @@ class _ImageCropFullState extends State<ImageCropFull> {
                       // touch targets.
                       padding: EdgeInsets.all(16),
                       child: Icon(
-                        MaterialSymbolsRounded.rotate_left,
+                        CupertinoIcons.rotate_left,
                         color: Colors.white,
                         size: 28,
                       ),
@@ -357,7 +357,7 @@ class _ImageCropFullState extends State<ImageCropFull> {
                       // touch targets.
                       padding: EdgeInsets.all(16),
                       child: Icon(
-                        MaterialSymbolsRounded.flip,
+                        CupertinoIcons.arrow_left_right,
                         color: Colors.white,
                         size: 28,
                       ),
@@ -374,7 +374,7 @@ class _ImageCropFullState extends State<ImageCropFull> {
                       // touch targets.
                       padding: EdgeInsets.all(16),
                       child: Icon(
-                        MaterialSymbolsRounded.crop_rotate,
+                        CupertinoIcons.crop,
                         color: Colors.white,
                         size: 28,
                       ),
@@ -392,7 +392,7 @@ class _ImageCropFullState extends State<ImageCropFull> {
                       // touch targets.
                       padding: EdgeInsets.all(16),
                       child: Icon(
-                        MaterialSymbolsRounded.rotate_right,
+                        CupertinoIcons.rotate_right,
                         color: Colors.white,
                         size: 28,
                       ),

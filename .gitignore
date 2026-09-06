@@ -58,7 +58,7 @@ Secrets.xcconfig
 *.pem
 *.p12
 *.mobileprovision
-.dnkeys
+# .dnkeys # modified by mg3994
 
 # Exported binaries
 *.apk
