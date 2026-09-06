@@ -1,0 +1,92 @@
+name: Build DartNative app
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  DART_NATIVE_LICENSE_TOKEN: ${{ secrets.DART_NATIVE_LICENSE_TOKEN }}
+
+jobs:
+  discover:
+    name: Discover Android apps
+    runs-on: ubuntu-latest
+    outputs:
+      targets: ${{ steps.targets.outputs.targets }}
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Find buildable apps
+        id: targets
+        shell: bash
+        run: |
+          candidates=(
+            playground
+            starter
+            tutorials/*
+            plugins/*/example
+            third_party_plugin
+            third_party_plugin/*/example
+          )
+          targets=()
+
+          for path in "${candidates[@]}"; do
+            if [[ -f "$path/pubspec.yaml" && -d "$path/android" ]]; then
+              targets+=("$path")
+            fi
+          done
+
+          if [[ ${#targets[@]} -eq 0 ]]; then
+            echo "No Android DartNative apps were found." >&2
+            exit 1
+          fi
+
+          printf 'targets=%s\n' "$(printf '%s\n' "${targets[@]}" | jq -Rsc 'split("\n") | map(select(length > 0))')" >> "$GITHUB_OUTPUT"
+
+  build:
+    name: Build ${{ matrix.target }}
+    needs: discover
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        target: ${{ fromJSON(needs.discover.outputs.targets) }}
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Install Android SDK 36
+        shell: bash
+        run: sdkmanager "platform-tools" "platforms;android-36" "build-tools;36.0.0"
+
+      - name: Install DartNative CLI
+        shell: bash
+        run: |
+          curl -fsSL https://cdn.dartnative.com/install.sh | sh
+          echo "$HOME/zero/bin" >> "$GITHUB_PATH"
+
+      - name: Verify DartNative CLI
+        run: dn --version
+
+      - name: Resolve dependencies
+        working-directory: ${{ matrix.target }}
+        run: dn pub get
+
+      - name: Build release APK
+        working-directory: ${{ matrix.target }}
+        shell: bash
+        run: dn build apk --release --dart-define=DART_NATIVE_LICENSE_TOKEN="$DART_NATIVE_LICENSE_TOKEN"

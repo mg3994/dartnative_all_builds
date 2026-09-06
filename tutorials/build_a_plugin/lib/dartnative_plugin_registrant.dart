@@ -24,6 +24,7 @@ import 'package:dartnative_ios/dartnative_ios.dart';
 import 'package:dartnative_android/dartnative_android.dart';
 import 'package:dartnative_compressor/dartnative_compressor.dart';
 import 'package:dartnative_media_picker/dartnative_media_picker.dart';
+import 'package:dartnative_media_picker/gallery.dart';
 import 'package:dartnative_share/dartnative_share.dart';
 
 abstract final class DartNativePluginRegistrant {
@@ -38,6 +39,10 @@ abstract final class DartNativePluginRegistrant {
     if (dnLicenseKey.isNotEmpty) {
       DartNativeLicense.instance.provideLicenseKey(dnLicenseKey);
     }
+    const dnTrialEnded = bool.fromEnvironment('DN_TRIAL_ENDED');
+    if (dnTrialEnded) {
+      DartNativeLicense.instance.noteTrialEnded();
+    }
     DartNativeLicense.instance.reportPluginUsage(const <String>[
       'dartnative_compressor',
       'dartnative_media_picker',
@@ -48,8 +53,31 @@ abstract final class DartNativePluginRegistrant {
           ? AndroidNativeBindings.instance
           : IOSNativeBindings.instance,
     );
-    CompressorFFIBindings.loadSymbols();
-    MediaPickerFFIBindings.loadSymbols();
-    ShareFFIBindings.loadSymbols();
+    _load('dartnative_compressor', () {
+      CompressorFFIBindings.loadSymbols();
+    });
+    _load('dartnative_media_picker', () {
+      MediaPickerFFIBindings.loadSymbols();
+      MediaGalleryFFIBindings.loadSymbols();
+    });
+    _load('dartnative_share', () {
+      ShareFFIBindings.loadSymbols();
+    });
+  }
+
+  /// Loads one plugin's FFI symbols, turning a missing native side into a
+  /// message that names the fix.
+  static void _load(String plugin, void Function() load) {
+    try {
+      load();
+    } catch (e) {
+      dnLog(
+        '[dartnative] $plugin: its native symbols are not in this build.\n'
+        '  iOS:     run `pod install` in ios/, then rebuild.\n'
+        '  Android: rebuild so the plugin library is packaged.\n'
+        '  The app keeps going; this plugin will not work until then.\n'
+        '  $e',
+      );
+    }
   }
 }
