@@ -36,7 +36,7 @@ jobs:
 
           for path in "${candidates[@]}"; do
             if [[ -f "$path/pubspec.yaml" && -d "$path/android" ]]; then
-              name="$(sed -nE 's/^name:[[:space:]]*["'"']?([^"'"']+)["'"']?[[:space:]]*$/\1/p' "$path/pubspec.yaml" | head -n 1)"
+              name="$(sed -nE "s/^name:[[:space:]]*[\"']?([^\"']+)[\"']?[[:space:]]*$/\1/p" "$path/pubspec.yaml" | head -n 1)"
               if [[ -z "$name" ]]; then
                 echo "Could not read pubspec name from $path/pubspec.yaml" >&2
                 exit 1
