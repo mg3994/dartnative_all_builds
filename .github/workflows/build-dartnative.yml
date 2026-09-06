@@ -5,8 +5,7 @@ on:
   pull_request:
   workflow_dispatch:
 
-permissions:
-  contents: read
+permissions: write-all
 
 env:
   DART_NATIVE_LICENSE_TOKEN: ${{ secrets.DART_NATIVE_LICENSE_TOKEN }}
@@ -90,3 +89,29 @@ jobs:
         working-directory: ${{ matrix.target }}
         shell: bash
         run: dn build apk --release --dart-define=DART_NATIVE_LICENSE_TOKEN="$DART_NATIVE_LICENSE_TOKEN"
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: apk-${{ strategy.job-index }}
+          path: ${{ matrix.target }}/build/**/outputs/**/*.apk
+          if-no-files-found: error
+
+  release:
+    name: Publish release
+    needs: build
+    if: github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download APKs
+        uses: actions/download-artifact@v4
+        with:
+          pattern: apk-*
+          path: release-artifacts
+
+      - name: Push into Releases Tab
+        uses: ncipollo/release-action@v1
+        with:
+          artifacts: release-artifacts/**/*.apk
+          tag: v1.0.${{ github.run_number }}
+          token: ${{ secrets.GITHUB_TOKEN }}
